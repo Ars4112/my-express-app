@@ -1,71 +1,112 @@
+import { ErrorResponse, IUser, IUserCreate, IUserRequest, IUserResponse, IUserUpdate, Message } from "../types/user";
 import { repository } from "../models/users";
 import { Response, Request } from "express";
+import { userResponse } from "../utils/usersResponse";
 
 class UserController {
-	async getAllUsers(req: Request, res: Response) {
-		const products = await repository.getAllUsers();
-
-		res.send(products);
-	}
-
-	async getUserById(req: Request, res: Response) {
+	async getAllUsers(req: Request, res: IUserResponse<IUser[]>) {
 		try {
-			const product = await repository.getUserById(+req.params.id);
-			res.send(product);
+			const users = await repository.getAllUsers();
+
+			if (!users) {
+				res.status(404).send(userResponse.errorResponse("Users not found"));
+				return;
+			}
+
+			res.send(userResponse.successResponse(users));
 		} catch (error) {
-			res.status(404).send({
-				message: `User ${+req.params.id} not found`,
-			});
+			if (error instanceof Error) {
+				res.status(500).send(userResponse.errorResponse(error.message));
+			}
 		}
 	}
 
-	async deleteUser(req: Request, res: Response) {
+	async getUserById(req: Request, res: IUserResponse<IUser>) {
 		try {
-            await repository.deleteUser(+req.params.id);
-    
-            res.status(200).send({
-                message: `User ${+req.params.id} deleted`,
-            });
-        } catch (error) {
-            res.status(404).send({
-                message: `User ${+req.params.id} not found`,
-            });
-        }
+			const user = await repository.getUserById(+req.params.id);
+
+			if (!user) {
+				res.status(404).send(userResponse.errorResponse(`User ${+req.params.id} not found`));
+				return;
+			}
+
+			res.send(userResponse.successResponse(user));
+		} catch (error) {
+			if (error instanceof Error) {
+				res.status(500).send(userResponse.errorResponse(error.message));
+			}
+		}
 	}
 
-	async updateUser(req: Request, res: Response) {
+	async deleteUser(req: Request, res: Response<Message | ErrorResponse>) {
 		try {
-            const isUpdeted = await repository.updeteUser(+req.params.id, req.body);
-            res.status(200).send(isUpdeted);
-        } catch (error) {
-            if (error instanceof Error) {
-                if (error.message === "User not found" || error.message === "User not updated") {
-                    res.status(404).send({
-                        message: error.message,
-                    });
-                } else {
-                    res.status(500).send({
-                        message: error.message,
-                    });
-                }
-            }
-        }
+			const user = await repository.getUserById(+req.params.id);
+
+			if (!user) {
+				res.status(404).send(userResponse.errorResponse(`User ${+req.params.id} not found`));
+				return;
+			}
+			const isDeleted = await repository.deleteUser(+req.params.id);
+
+			if (!isDeleted) {
+				res.status(401).send(userResponse.errorResponse(`User ${+req.params.id} not deleted`));
+
+				return;
+			}
+
+			res.status(200).send({
+				message: `User ${+req.params.id} deleted`,
+			});
+		} catch (error) {
+			if (error instanceof Error) {
+				res.status(500).send(userResponse.errorResponse(error.message));
+			}
+		}
 	}
-	async createUser(req: Request, res: Response) {
+
+	async updateUser(req: IUserRequest<IUserUpdate>, res: Response<Message | ErrorResponse>) {
 		try {
-			const newProducts = await repository.createUser(req.body);
-			res.status(201).send(newProducts);
+			const user = await repository.getUserById(+req.params.id);
+			if (!user) {
+				res.status(404).send(userResponse.errorResponse(`User ${+req.params.id} not found`));
+				return;
+			}
+
+			const isUpdeted = await repository.updeteUser(+req.params.id, req.body);
+
+			if (!isUpdeted) {
+				res.status(401).send(userResponse.errorResponse(`User ${+req.params.id} not updated`));
+				return;
+			}
+
+			res.status(200);
+		} catch (error) {
+			if (error instanceof Error) {
+				res.status(500).send(userResponse.errorResponse(error.message));
+			}
+		}
+	}
+	async createUser(req: IUserRequest<IUserCreate>, res: IUserResponse<IUser>) {
+		try {
+			const { email } = req.body;
+			const existingUser = await repository.getUserByEmail(email);
+
+			if (existingUser) {
+				res.status(400).send(userResponse.errorResponse("User already exists"));
+				return;
+			}
+			const newUser = await repository.createUser(req.body);
+
+			if (!newUser) {
+				res.status(401).send(userResponse.errorResponse("User not created"));
+
+				return;
+			}
+
+			res.status(201).send(userResponse.successResponse(newUser));
 		} catch (error: unknown) {
 			if (error instanceof Error) {
-				if (error.message === "User not created" || error.message === "User already exists") {
-					res.status(400).send({
-						message: error.message,
-					});
-				} else {
-					res.status(500).send({
-						message: error.message,
-					});
-				}
+				res.status(500).send(userResponse.errorResponse(error.message));
 			}
 		}
 	}
