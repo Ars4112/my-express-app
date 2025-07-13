@@ -1,11 +1,14 @@
 import { loginValidator, registerValidator } from "../validators/authValidator";
 import { authController } from "../controllers/authController";
 import { Router } from "express";
-import { checkingToken } from "../middleware/checkingToken";
+import { checkingAccessToken } from "../middleware/checkingAccessToken";
 import { inputValidationMiddleware } from "../middleware/inputValidationMiddleware";
+import { checkingRefreshToken } from "../middleware/checkingRefreshToken";
 
 export const auth = Router();
 
-auth.post("/register",registerValidator, inputValidationMiddleware, authController.register);
-auth.post("/login",loginValidator, inputValidationMiddleware, authController.login);
-auth.get('/me',checkingToken, authController.getMe)
+auth.post("/register", registerValidator, inputValidationMiddleware, authController.register);
+auth.post("/login", loginValidator, inputValidationMiddleware, authController.login);
+auth.post("/logout", checkingAccessToken, authController.logout);
+auth.post("/refresh", checkingRefreshToken, authController.refresh);
+auth.get("/me", checkingAccessToken, authController.getMe);

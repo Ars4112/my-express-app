@@ -1,4 +1,4 @@
-import { IAuth } from "@/types/auth";
+import { IAuth } from "../types/auth";
 import { ErrorResponse } from "../types/user";
 
 class AuthResponse {

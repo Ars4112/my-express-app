@@ -1,5 +1,5 @@
 import { Response, Request } from "express";
-import { ErrorResponse, SuccessResponse } from "./user";
+import { ErrorResponse } from "./user";
 
 export type IAuthRequest<T> = Request<{}, {}, T>;
 export type IAuthResponse<T> = Response<IAuth<T> | ErrorResponse>;

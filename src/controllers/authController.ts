@@ -1,10 +1,10 @@
 import { Response, Request } from "express";
 import { repository } from "../models/users";
-import jwt, { SignOptions } from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { IUser, IUserCreate } from "../types/user";
 import { IAuthRequest, IAuthResponse } from "../types/auth";
 import { authResponse } from "../utils/authResponse";
+import { tokenService } from "../services/token";
 class AuthController {
 	async register(req: IAuthRequest<IUserCreate>, res: IAuthResponse<IUser>) {
 		try {
@@ -20,18 +20,13 @@ class AuthController {
 
 			if (!newUser) {
 				res.status(401).send(authResponse.errorResponse("User not created"));
-
 				return;
 			}
 
-			const options: SignOptions = {
-				expiresIn: "1h",
-				algorithm: "HS256",
-			};
+			const token = await tokenService.generateTokens({ id: newUser.id, email: newUser.email });
+			await tokenService.setRefreshCookie(res, token.refresh_token);
 
-			const token = jwt.sign({ id: newUser.id, email: newUser.email }, process.env.JWT_SECRET as string, options);
-
-			res.status(201).json(authResponse.successResponse(newUser, token));
+			res.status(201).json(authResponse.successResponse(newUser, token.accessToken));
 		} catch (error: unknown) {
 			if (error instanceof Error) {
 				res.status(500).json(authResponse.errorResponse(error.message));
@@ -53,14 +48,10 @@ class AuthController {
 				return;
 			}
 
-			const options: SignOptions = {
-				expiresIn: "1h",
-				algorithm: "HS256",
-			};
+			const token = await tokenService.generateTokens({ id: user.id, email: user.email });
+			await tokenService.setRefreshCookie(res, token.refresh_token);
 
-			const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET as string, options);
-
-			res.status(201).json(authResponse.successResponse(user, token));
+			res.status(201).json(authResponse.successResponse(user, token.accessToken));
 		} catch (error: unknown) {
 			if (error instanceof Error) {
 				if (error.message === "User not found") {
@@ -81,14 +72,55 @@ class AuthController {
 				return;
 			}
 
-            const options: SignOptions = {
-				expiresIn: "1h",
-				algorithm: "HS256",
-			};
+			const token = await tokenService.generateTokens({ id: user.id, email: user.email });
 
-            const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET as string, options);
+			res.status(200).json(authResponse.successResponse(user, token.accessToken));
+		} catch (error) {
+			if (error instanceof Error) {
+				res.status(500).json(authResponse.errorResponse(error.message));
+			}
+		}
+	}
 
-			res.status(200).json(authResponse.successResponse(user, token));
+	async logout(req: Request, res: Response) {
+		try {
+			const { refreshToken } = req.cookies;
+			if (!refreshToken) {
+				res.status(401).json(authResponse.errorResponse("Unauthorized"));
+				return;
+			}
+			await tokenService.invalidateRefreshToken(refreshToken);
+			await tokenService.clearRefreshCookie(res);
+
+			res.status(200).json({ message: "Logged out successfully" });
+			// TODO: add logout to blacklist
+		} catch (error) {
+			if (error instanceof Error) {
+				res.status(500).json(authResponse.errorResponse(error.message));
+			}
+		}
+	}
+
+	async refresh(req: Request, res: Response) {
+		try {
+			const { id, email } = req.body;
+			const { refreshToken } = req.cookies;
+
+			const user = await repository.getUserById(id);
+			if (!user) {
+				res.status(401).json(authResponse.errorResponse("User not found"));
+				return;
+			}
+
+			await tokenService.invalidateRefreshToken(refreshToken);
+
+			const token = await tokenService.generateTokens({ id, email });
+			await tokenService.setRefreshCookie(res, token.refresh_token);
+
+			res.status(200).json({
+				message: "Token refreshed",
+				token: token.accessToken,
+			});
 		} catch (error) {
 			if (error instanceof Error) {
 				res.status(500).json(authResponse.errorResponse(error.message));

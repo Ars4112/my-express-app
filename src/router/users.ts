@@ -2,10 +2,11 @@ import { userUpdateValidator } from "../validators/userValidator";
 import { userController } from "../controllers/userController";
 import { Router } from "express";
 import { inputValidationMiddleware } from "../middleware/inputValidationMiddleware";
+import { checkingAccessToken } from "../middleware/checkingAccessToken";
 
 export const users = Router();
 
-users.get("/", userController.getAllUsers);
+users.get("/",checkingAccessToken, userController.getAllUsers);
 
 users.get("/:id", userController.getUserById);
 
