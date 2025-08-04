@@ -1,7 +1,4 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.pool = void 0;
-const pg_1 = require("pg");
+import { Pool } from "pg";
 const dbConfig = {
     user: 'admin',
     host: 'localhost',
@@ -12,8 +9,8 @@ const dbConfig = {
 if (!dbConfig.password || typeof dbConfig.password !== 'string') {
     throw new Error('PostgreSQL password must be a string!');
 }
-exports.pool = new pg_1.Pool(dbConfig);
-exports.pool
+export const pool = new Pool(dbConfig);
+pool
     .query("SELECT NOW()")
     .then(() => console.log("PostgreSQL connected"))
     .catch((err) => console.error("PostgreSQL connection error", err));

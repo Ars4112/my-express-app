@@ -13,7 +13,7 @@ class UserController {
 				return;
 			}
 
-			res.send(userResponse.successResponse(users));
+			res.status(200).json(userResponse.successResponse(users));
 		} catch (error) {
 			if (error instanceof Error) {
 				res.status(500).send(userResponse.errorResponse(error.message));

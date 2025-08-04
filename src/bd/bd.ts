@@ -2,7 +2,7 @@ import { Pool, PoolConfig } from "pg";
 
 const dbConfig: PoolConfig = {
 	user: 'admin',
-	host: 'localhost',
+	host: 'postgres',
 	database: 'my_app_db',
 	password: 'admin',
 	port: 5432,

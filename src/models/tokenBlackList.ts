@@ -1,8 +1,15 @@
 import { ITokenPayloadAddRefresh } from "../types/token";
 import { pool } from "../bd/bd";
 class TokenBlacklist {
-	async addToBlacklist(payload : ITokenPayloadAddRefresh): Promise<void> {
+	async addToBlacklist(payload: ITokenPayloadAddRefresh): Promise<void> {
 		const { refresh_token, expires_at, user_id } = payload;
+		
+		const userExists = await pool.query("SELECT 1 FROM users WHERE id = $1", [user_id]);
+
+		if (userExists.rows.length === 0) {
+			throw new Error(`User with id ${user_id} not found`);
+		}
+
 		const query = `
         INSERT INTO token_blacklist(refresh_token, expires_at, user_id) 
         VALUES($1, $2, $3)

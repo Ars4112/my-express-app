@@ -12,12 +12,17 @@ export const checkingRefreshToken = async (req: Request, res: Response, next: Ne
 		}
 
 		const userData = await tokenService.validateRefreshToken(refreshToken);
+
 		if (!userData) {
-			res.status(401).json(authResponse.errorResponse("Invalid refresh token"));
+			res.status(401).json(authResponse.errorResponse("Invalid refresh token111"));
 			return;
 		}
 
-        
+		if ("expired" in userData) {
+			await tokenService.invalidateRefreshToken(refreshToken);
+			res.status(401).json(authResponse.errorResponse("Refresh token expired"));
+			return;
+		}
 
 		req.body = userData;
 

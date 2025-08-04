@@ -1,11 +1,9 @@
-version: "3.8"
-
 services:
   app:
     build: .
     container_name: my_app
     ports:
-      - "8080:8080"
+      - "3001:3001"
     networks:
       - app_network
     environment:
@@ -14,8 +12,16 @@ services:
       - PGDATABASE=my_app_db
       - PGPASSWORD=admin
       - PGPORT=5432
+      # - NODE_ENV=development # Важно для dev-зависимостей
+    volumes:
+      - ./src:/app/src
+      - ./dist:/app/dist
+      # Добавляем volume для node_modules, чтобы избежать проблем
+      - /app/node_modules
     depends_on:
       - postgres
+    # Для разработки используем эту команду
+    command: sh -c "npm install && npm run dev"
   postgres:
     image: postgres:15-alpine
     container_name: my_postgres
@@ -48,4 +54,6 @@ volumes:
 
 networks:
   app_network:
+    driver: bridge
+  microservices-network:
     driver: bridge

@@ -36,16 +36,20 @@ class TokenService {
 		}
 	}
 
-	async validateRefreshToken(token: string): Promise<ITokenPayload | null> {
+	async validateRefreshToken(token: string): Promise<ITokenPayload | any> {
 		try {
-			debugger;
 			const isBlacklisted = await tokenBlacklist.isBlacklisted(token);
 			if (isBlacklisted) {
 				return null;
 			}
 
-			return jwt.verify(token, this.refreshTokenSecret) as ITokenPayload;
+			const payload = jwt.verify(token, this.refreshTokenSecret) as ITokenPayload;
+
+			return payload;
 		} catch (e) {
+			if (e instanceof jwt.TokenExpiredError) {
+				return { expired: true };
+			}
 			return null;
 		}
 	}
