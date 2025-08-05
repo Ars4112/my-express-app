@@ -4,7 +4,7 @@ FROM node:20.12.2-bullseye
 WORKDIR /app
 
 # Сначала копируем только зависимости
-COPY package.json package-lock.json ./
+COPY package.json ./
 
 # Устанавливаем зависимости (включая dev) и tsx глобально
 RUN npm install -g tsx@4.20.3 && \

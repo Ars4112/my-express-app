@@ -1,7 +1,7 @@
 import { pool } from "../bd/bd";
 import { IImage, IImageRepository, IImageType } from "../types/image";
 
-export default class Images {
+ class Images {
 	async getImageUser(id: number, image_type: IImageType): Promise<IImage> {
 		const image = await pool.query("SELECT * FROM user_image WHERE user_id = $1 AND image_type = $2", [id, image_type]);
 
@@ -33,3 +33,5 @@ export default class Images {
 		return updatedImage.rowCount !== 0;
 	}
 }
+
+export const imagesModule = new Images();

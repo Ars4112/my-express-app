@@ -12,7 +12,7 @@ services:
       - PGDATABASE=my_app_db
       - PGPASSWORD=admin
       - PGPORT=5432
-      # - NODE_ENV=development # Важно для dev-зависимостей
+      - NODE_ENV=development # Важно для dev-зависимостей
     volumes:
       - ./src:/app/src
       - ./dist:/app/dist

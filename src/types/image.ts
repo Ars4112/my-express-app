@@ -1,5 +1,5 @@
 export type IImage = {
-	id: number;
+	// id: number;
 	user_id: number;
 	bucket_key: string;
 	image_type: IImageType;
